@@ -30,7 +30,7 @@ export default function AdminDashboard() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [staffFilter, setStaffFilter] = useState('');
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'student' });
+  const [newUser, setNewUser] = useState({ name: '', username: '', password: '', role: 'student' });
 
   useEffect(() => {
     if (activeTab === 'users') {
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
       });
       if (response.ok) {
         setIsUserModalOpen(false);
-        setNewUser({ name: '', email: '', password: '', role: 'student' });
+        setNewUser({ name: '', username: '', password: '', role: 'student' });
         loadUsers();
       } else {
         const data = await response.json();
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
               <thead>
                 <tr className="bg-black/[0.02] text-black/40 text-xs uppercase tracking-widest font-bold">
                   <th className="px-6 py-4">Name</th>
-                  <th className="px-6 py-4">Email</th>
+                  <th className="px-6 py-4">Username</th>
                   <th className="px-6 py-4">Role</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
@@ -199,7 +199,7 @@ export default function AdminDashboard() {
                 {users.map((u) => (
                   <tr key={u.id} className="hover:bg-black/[0.01] transition-colors">
                     <td className="px-6 py-4 font-medium">{u.name}</td>
-                    <td className="px-6 py-4 text-black/60 text-sm">{u.email}</td>
+                    <td className="px-6 py-4 text-black/60 text-sm">{u.username}</td>
                     <td className="px-6 py-4">
                       <span className={cn(
                         "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
@@ -459,13 +459,13 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-black/40 uppercase tracking-widest">Email Address</label>
+                  <label className="text-xs font-bold text-black/40 uppercase tracking-widest">Username</label>
                   <div className="relative">
                     <input 
-                      type="email" 
-                      value={newUser.email}
-                      onChange={(e) => setNewUser({...newUser, email: e.target.value})}
-                      placeholder="john@lexora.com"
+                      type="text" 
+                      value={newUser.username}
+                      onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                      placeholder="john_doe"
                       className="w-full pl-10 pr-4 py-4 bg-black/5 border-none rounded-2xl text-sm focus:ring-2 focus:ring-black/5 outline-none"
                       required
                     />

@@ -7,17 +7,23 @@ import { cn } from '../lib/utils';
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('student');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(selectedRole, email, password);
-    if (selectedRole === 'student') navigate('/portal');
-    else if (selectedRole === 'staff') navigate('/staff-dashboard');
-    else navigate('/admin-dashboard');
+    setError(null);
+    try {
+      await login(selectedRole, username, password);
+      if (selectedRole === 'student') navigate('/portal');
+      else if (selectedRole === 'staff') navigate('/staff-dashboard');
+      else navigate('/admin-dashboard');
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please check your credentials.");
+    }
   };
 
   return (
@@ -67,13 +73,18 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-bold flex items-center gap-2">
+                <Lock size={14} /> {error}
+              </div>
+            )}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-black/40 uppercase tracking-widest">Email Address</label>
+              <label className="text-xs font-bold text-black/40 uppercase tracking-widest">Username</label>
               <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={selectedRole === 'student' ? "student@lexora.com" : selectedRole === 'staff' ? "staff@lexora.com" : "admin@lexora.com"}
+                type="text" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder={selectedRole === 'student' ? "student_user" : selectedRole === 'staff' ? "staff_user" : "admin"}
                 className="w-full px-4 py-4 bg-black/5 border-none rounded-2xl text-sm focus:ring-2 focus:ring-black/5 outline-none"
                 required
               />
