@@ -71,6 +71,27 @@ async function startServer() {
     }
   });
 
+  // User Management Routes
+  app.get("/api/users", (req, res) => {
+    const role = req.query.role as string;
+    let query = "SELECT id, name, email, role FROM users";
+    const params: any[] = [];
+    
+    if (role) {
+      query += " WHERE role = ?";
+      params.push(role);
+    }
+    
+    const rows = db.prepare(query).all(...params);
+    res.json(rows);
+  });
+
+  app.delete("/api/users/:id", (req, res) => {
+    const { id } = req.params;
+    db.prepare("DELETE FROM users WHERE id = ?").run(id);
+    res.json({ success: true });
+  });
+
   // API Routes
   app.get("/api/requests", (req, res) => {
     const studentId = req.query.studentId as string;
