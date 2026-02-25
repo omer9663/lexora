@@ -26,19 +26,26 @@ export default function StudentPortal() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<AssignmentRequest | null>(null);
   const [newRequest, setNewRequest] = useState({ title: '', description: '', type: 'Essay' });
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadRequests();
-  }, []);
+  }, [user]);
 
   const loadRequests = async () => {
+    if (!user?.id) return;
     try {
-      const all = await RequestStore.getRequests({ studentId: user?.id });
+      const all = await RequestStore.getRequests({ studentId: user.id });
       setRequests(all);
     } catch (error) {
       console.error("Failed to load requests:", error);
     }
   };
+
+  const filteredRequests = requests.filter(r => 
+    r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handlePay = async (requestId: string) => {
     try {
@@ -170,6 +177,8 @@ export default function StudentPortal() {
               <input 
                 type="text" 
                 placeholder="Search..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 pr-4 py-2 bg-black/5 border-none rounded-lg text-sm focus:ring-2 focus:ring-black/5 outline-none w-full sm:w-64"
               />
             </div>
@@ -192,12 +201,12 @@ export default function StudentPortal() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
-                {requests.length === 0 ? (
+                {filteredRequests.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-black/20 font-medium">No requests found. Start by creating a new request.</td>
                   </tr>
                 ) : (
-                  requests.map((item) => (
+                  filteredRequests.map((item) => (
                     <tr key={item.id} className="hover:bg-black/[0.01] transition-colors">
                       <td className="px-6 py-4 font-mono text-xs font-bold">{item.id}</td>
                       <td className="px-6 py-4 font-medium text-black">
@@ -238,7 +247,12 @@ export default function StudentPortal() {
                             </button>
                           </div>
                         ) : (
-                          <button className="text-sm font-bold text-black hover:underline">Details</button>
+                          <button 
+                            onClick={() => { setSelectedRequest(item); setIsPreviewOpen(true); }}
+                            className="text-sm font-bold text-black hover:underline"
+                          >
+                            Details
+                          </button>
                         )}
                       </td>
                     </tr>

@@ -23,20 +23,28 @@ export default function StaffDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<AssignmentRequest | null>(null);
   const [workContent, setWorkContent] = useState('');
   const [attachments, setAttachments] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadRequests();
-  }, []);
+  }, [user]);
 
   const loadRequests = async () => {
+    if (!user?.id) return;
     try {
       const all = await RequestStore.getRequests();
       // Staff sees requests assigned to them or pending assignment
-      setRequests(all.filter(r => r.assignedTo === user?.id || r.status === 'PENDING_ASSIGNMENT' || r.status === 'REJECTED'));
+      setRequests(all.filter(r => r.assignedTo === user.id || r.status === 'PENDING_ASSIGNMENT' || r.status === 'REJECTED'));
     } catch (error) {
       console.error("Failed to load requests:", error);
     }
   };
+
+  const filteredRequests = requests.filter(r => 
+    r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.studentName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -102,13 +110,15 @@ export default function StaffDashboard() {
               <input 
                 type="text" 
                 placeholder="Search requests..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-black/5 border-none rounded-lg text-sm focus:ring-2 focus:ring-black/5 outline-none"
               />
             </div>
           </div>
 
           <div className="space-y-3">
-            {requests.map((req) => (
+            {filteredRequests.map((req) => (
               <button
                 key={req.id}
                 onClick={() => setSelectedRequest(req)}

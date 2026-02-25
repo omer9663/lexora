@@ -40,6 +40,31 @@ db.exec(`
     attachments TEXT,
     isPaid INTEGER DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS leads (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    phone TEXT,
+    email TEXT,
+    country TEXT,
+    assignmentType TEXT,
+    potentialIncome REAL,
+    status TEXT,
+    assignedTo TEXT,
+    assignedName TEXT,
+    createdAt TEXT,
+    updatedAt TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS lead_logs (
+    id TEXT PRIMARY KEY,
+    leadId TEXT,
+    userId TEXT,
+    userName TEXT,
+    action TEXT,
+    content TEXT,
+    createdAt TEXT
+  );
 `);
 
 // Seed default admin
@@ -99,6 +124,66 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  // Lead Routes
+  app.get("/api/leads", (req, res) => {
+    const assignedTo = req.query.assignedTo as string;
+    let query = "SELECT * FROM leads";
+    const params: any[] = [];
+    if (assignedTo) {
+      query += " WHERE assignedTo = ?";
+      params.push(assignedTo);
+    }
+    const rows = db.prepare(query).all(...params);
+    res.json(rows);
+  });
+
+  app.post("/api/leads", (req, res) => {
+    const { name, phone, email, country, assignmentType, potentialIncome, status, assignedTo, assignedName } = req.body;
+    const id = `LEAD-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    const now = new Date().toISOString();
+    const stmt = db.prepare(`
+      INSERT INTO leads (id, name, phone, email, country, assignmentType, potentialIncome, status, assignedTo, assignedName, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(id, name, phone, email, country, assignmentType, potentialIncome || 0, status || 'NEW', assignedTo || null, assignedName || null, now, now);
+    res.status(201).json({ id });
+  });
+
+  app.patch("/api/leads/:id", (req, res) => {
+    const { id } = req.params;
+    const updates = req.body;
+    const fields = Object.keys(updates);
+    if (fields.length === 0) return res.status(400).json({ error: "No fields to update" });
+
+    updates.updatedAt = new Date().toISOString();
+    const finalFields = Object.keys(updates);
+    const setClause = finalFields.map(f => `${f} = ?`).join(", ");
+    const values = finalFields.map(f => updates[f]);
+
+    const query = `UPDATE leads SET ${setClause} WHERE id = ?`;
+    db.prepare(query).run(...values, id);
+    res.json({ success: true });
+  });
+
+  app.get("/api/leads/:id/logs", (req, res) => {
+    const { id } = req.params;
+    const rows = db.prepare("SELECT * FROM lead_logs WHERE leadId = ? ORDER BY createdAt DESC").all(id);
+    res.json(rows);
+  });
+
+  app.post("/api/leads/:id/logs", (req, res) => {
+    const { id: leadId } = req.params;
+    const { userId, userName, action, content } = req.body;
+    const id = Math.random().toString(36).substr(2, 9);
+    const now = new Date().toISOString();
+    const stmt = db.prepare(`
+      INSERT INTO lead_logs (id, leadId, userId, userName, action, content, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(id, leadId, userId, userName, action, content, now);
+    res.status(201).json({ success: true });
+  });
+
   // API Routes
   app.get("/api/requests", (req, res) => {
     const studentId = req.query.studentId as string;
@@ -135,12 +220,28 @@ async function startServer() {
   });
 
   app.post("/api/requests", (req, res) => {
-    const { id, title, description, type, status, studentId, studentName, createdAt } = req.body;
+    const { 
+      id, title, description, type, status, studentId, studentName, createdAt,
+      assignedTo, assignedName, completedAt, verifiedAt, comments,
+      plagiarismScore, aiScore, reportUrl, workContent, attachments, isPaid
+    } = req.body;
+    
     const stmt = db.prepare(`
-      INSERT INTO requests (id, title, description, type, status, studentId, studentName, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO requests (
+        id, title, description, type, status, studentId, studentName, createdAt,
+        assignedTo, assignedName, completedAt, verifiedAt, comments,
+        plagiarismScore, aiScore, reportUrl, workContent, attachments, isPaid
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(id, title, description, type, status, studentId, studentName, createdAt);
+    
+    stmt.run(
+      id, title, description, type, status, studentId, studentName, createdAt,
+      assignedTo || null, assignedName || null, completedAt || null, verifiedAt || null, comments || null,
+      plagiarismScore || 0, aiScore || 0, reportUrl || null, workContent || null,
+      attachments ? JSON.stringify(attachments) : null,
+      isPaid ? 1 : 0
+    );
     res.status(201).json({ success: true });
   });
 

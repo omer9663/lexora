@@ -98,9 +98,16 @@ export default function AdminDashboard() {
     }
   };
 
+  const filteredRequests = requests.filter(r => 
+    r.assignedName?.toLowerCase().includes(staffFilter.toLowerCase()) ||
+    r.id.toLowerCase().includes(staffFilter.toLowerCase()) ||
+    r.title.toLowerCase().includes(staffFilter.toLowerCase())
+  );
+
   const filteredHistory = historyRequests.filter(r => 
     r.assignedName?.toLowerCase().includes(staffFilter.toLowerCase()) ||
-    r.id.toLowerCase().includes(staffFilter.toLowerCase())
+    r.id.toLowerCase().includes(staffFilter.toLowerCase()) ||
+    r.title.toLowerCase().includes(staffFilter.toLowerCase())
   );
 
   const handleVerify = async (id: string, approved: boolean) => {
@@ -247,10 +254,10 @@ export default function AdminDashboard() {
             
             <div className="space-y-3">
               {activeTab === 'pending' ? (
-                requests.length === 0 ? (
+                filteredRequests.length === 0 ? (
                   <p className="text-center py-8 text-black/20 text-sm font-medium">No requests pending review</p>
                 ) : (
-                  requests.map((req) => (
+                  filteredRequests.map((req) => (
                     <button
                       key={req.id}
                       onClick={() => setSelectedRequest(req)}
