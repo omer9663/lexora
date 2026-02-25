@@ -31,15 +31,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = (role: UserRole) => {
-    const mockUser: User = {
-      id: role === 'student' ? 'std_1' : role === 'staff' ? 'stf_1' : 'adm_1',
-      name: role === 'student' ? 'John Student' : role === 'staff' ? 'Jane Staff' : 'Arthur Admin',
-      email: role === 'student' ? 'student@lexora.com' : role === 'staff' ? 'staff@lexora.com' : 'admin@lexora.com',
-      role,
-    };
-    setUser(mockUser);
-    localStorage.setItem('lexora_user', JSON.stringify(mockUser));
+  const login = async (role: UserRole, email?: string, password?: string) => {
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        localStorage.setItem('lexora_user', JSON.stringify(userData));
+        return userData;
+      } else {
+        // Fallback for demo purposes if user doesn't exist yet
+        // In a real app, you'd show an error
+        const mockUser: User = {
+          id: role === 'student' ? 'std_1' : role === 'staff' ? 'stf_1' : 'adm_1',
+          name: role === 'student' ? 'John Student' : role === 'staff' ? 'Jane Staff' : 'Arthur Admin',
+          email: email || (role === 'student' ? 'student@lexora.com' : role === 'staff' ? 'staff@lexora.com' : 'admin@lexora.com'),
+          role,
+        };
+        
+        // Auto-register the mock user if login fails (for demo convenience)
+        await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...mockUser, password: password || 'password' })
+        });
+
+        setUser(mockUser);
+        localStorage.setItem('lexora_user', JSON.stringify(mockUser));
+        return mockUser;
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
   };
 
   const logout = () => {

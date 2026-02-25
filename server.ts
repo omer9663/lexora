@@ -11,6 +11,14 @@ const db = new Database("lexora.db");
 
 // Initialize Database
 db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    email TEXT UNIQUE,
+    password TEXT,
+    role TEXT
+  );
+
   CREATE TABLE IF NOT EXISTS requests (
     id TEXT PRIMARY KEY,
     title TEXT,
@@ -31,7 +39,7 @@ db.exec(`
     workContent TEXT,
     attachments TEXT,
     isPaid INTEGER DEFAULT 0
-  )
+  );
 `);
 
 async function startServer() {
@@ -39,6 +47,29 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  // Auth Routes
+  app.post("/api/auth/register", (req, res) => {
+    const { name, email, password, role } = req.body;
+    const id = Math.random().toString(36).substr(2, 9);
+    try {
+      const stmt = db.prepare("INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)");
+      stmt.run(id, name, email, password, role);
+      res.json({ id, name, email, role });
+    } catch (e) {
+      res.status(400).json({ error: "Email already exists" });
+    }
+  });
+
+  app.post("/api/auth/login", (req, res) => {
+    const { email, password } = req.body;
+    const user = db.prepare("SELECT * FROM users WHERE email = ? AND password = ?").get(email, password) as any;
+    if (user) {
+      res.json({ id: user.id, name: user.name, email: user.email, role: user.role });
+    } else {
+      res.status(401).json({ error: "Invalid credentials" });
+    }
+  });
 
   // API Routes
   app.get("/api/requests", (req, res) => {

@@ -7,12 +7,14 @@ import { cn } from '../lib/utils';
 
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<UserRole>('student');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(selectedRole);
+    await login(selectedRole, email, password);
     if (selectedRole === 'student') navigate('/portal');
     else if (selectedRole === 'staff') navigate('/staff-dashboard');
     else navigate('/admin-dashboard');
@@ -69,7 +71,9 @@ export default function LoginPage() {
               <label className="text-xs font-bold text-black/40 uppercase tracking-widest">Email Address</label>
               <input 
                 type="email" 
-                placeholder={selectedRole === 'student' ? "student@lexora.com" : "staff@lexora.com"}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={selectedRole === 'student' ? "student@lexora.com" : selectedRole === 'staff' ? "staff@lexora.com" : "admin@lexora.com"}
                 className="w-full px-4 py-4 bg-black/5 border-none rounded-2xl text-sm focus:ring-2 focus:ring-black/5 outline-none"
                 required
               />
@@ -79,6 +83,8 @@ export default function LoginPage() {
               <div className="relative">
                 <input 
                   type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full px-4 py-4 bg-black/5 border-none rounded-2xl text-sm focus:ring-2 focus:ring-black/5 outline-none"
                   required
@@ -91,7 +97,7 @@ export default function LoginPage() {
               type="submit"
               className="w-full bg-black text-white py-4 rounded-2xl font-bold hover:bg-black/80 transition-all flex items-center justify-center gap-2"
             >
-              Sign In as {selectedRole === 'student' ? 'Student' : 'Staff'} <ArrowRight size={18} />
+              Sign In as {selectedRole === 'student' ? 'Student' : selectedRole === 'staff' ? 'Staff' : 'Admin'} <ArrowRight size={18} />
             </button>
           </form>
 
